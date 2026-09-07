@@ -23,6 +23,9 @@ public class User {
     @Column(name = "full_name")
     private String fullName;
 
+    @Column(name = "email", unique = true)
+    private String email;
+
     @Column(nullable = false)
     private String role; // STUDENT, TUTOR, ADMIN
 

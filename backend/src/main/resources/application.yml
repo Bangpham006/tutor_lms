@@ -1,9 +1,19 @@
-spring.application.name=backend
 spring:
+  application:
+    name: backend
+  profiles:
+    active: local
+
   datasource:
-    url: jdbc:postgresql://db.gzyokemqqekeohlnrxcu.supabase.co:5432/postgres?sslmode=require
-    username: postgres
+    # URL đã lược bỏ phần [YOUR-PASSWORD] và thêm tiền tố jdbc: dành cho Java
+    url: jdbc:postgresql://aws-0-ap-southeast-2.pooler.supabase.com:5432/postgres?sslmode=require
+
+    # Username đã tách ra từ chuỗi của Supabase
+    username: postgres.gzyokemqqekeohlnrxcu
+
+    # ĐIỀN MẬT KHẨU THẬT CỦA BẠN VÀO ĐÂY (Thay cho chữ [YOUR-PASSWORD]):
     password: Bangpham@@06012005
+
     driver-class-name: org.postgresql.Driver
 
   jpa:
@@ -13,7 +23,6 @@ spring:
     properties:
       hibernate:
         format_sql: true
-        dialect: org.hibernate.dialect.PostgreSQLDialect
 
 server:
-  port: 8080 
+  port: 8080
