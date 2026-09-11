@@ -1,0 +1,513 @@
+{
+  "info": {
+    "name": "TutorLMS - Module LMS",
+    "description": "Chạy Collection theo thứ tự folder. Import kèm environment TutorLMS Local. Đổi tutorPhone/studentPhone nếu số đã tồn tại.\n\nBearer token lấy từ login và gắn tự động qua collection variable.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080" }
+  ],
+  "item": [
+    {
+      "name": "0. Auth",
+      "item": [
+        {
+          "name": "Register tutor",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Register tutor 200', function () { pm.response.to.have.status(200); });",
+                  "const body = pm.response.json();",
+                  "if (body.token) { pm.environment.set('tutorToken', body.token); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"{{tutorPhone}}\",\n  \"fullName\": \"Giang vien test\",\n  \"role\": \"TUTOR\",\n  \"password\": \"{{tutorPassword}}\",\n  \"email\": \"tutor.{{tutorPhone}}@example.com\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/auth/register"
+          }
+        },
+        {
+          "name": "Register student",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Register student 200', function () { pm.response.to.have.status(200); });",
+                  "const body = pm.response.json();",
+                  "if (body.token) { pm.environment.set('studentToken', body.token); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"{{studentPhone}}\",\n  \"fullName\": \"Hoc vien test\",\n  \"role\": \"STUDENT\",\n  \"password\": \"{{studentPassword}}\",\n  \"email\": \"student.{{studentPhone}}@example.com\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/auth/register"
+          }
+        },
+        {
+          "name": "Login tutor",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Login tutor 200', function () { pm.response.to.have.status(200); });",
+                  "const body = pm.response.json();",
+                  "pm.expect(body.token).to.be.ok;",
+                  "pm.environment.set('tutorToken', body.token);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"account\": \"{{tutorPhone}}\",\n  \"password\": \"{{tutorPassword}}\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/auth/login"
+          }
+        },
+        {
+          "name": "Login student",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Login student 200', function () { pm.response.to.have.status(200); });",
+                  "const body = pm.response.json();",
+                  "pm.expect(body.token).to.be.ok;",
+                  "pm.environment.set('studentToken', body.token);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"account\": \"{{studentPhone}}\",\n  \"password\": \"{{studentPassword}}\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/auth/login"
+          }
+        }
+      ]
+    },
+    {
+      "name": "1. Course",
+      "item": [
+        {
+          "name": "Tutor create course",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Create course 200', function () { pm.response.to.have.status(200); });",
+                  "const body = pm.response.json();",
+                  "pm.expect(body.id).to.be.ok;",
+                  "pm.environment.set('courseId', body.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{tutorToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Toan 12 - LMS\",\n  \"description\": \"Khoa hoc test tai lieu va bai tap\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/tutor/courses"
+          }
+        },
+        {
+          "name": "Student catalog",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Catalog 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('Catalog is array', function () { pm.expect(pm.response.json()).to.be.an('array'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{studentToken}}" }],
+            "url": "{{baseUrl}}/api/v1/student/courses/catalog"
+          }
+        },
+        {
+          "name": "Student enroll course",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Enroll 200', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{studentToken}}" }],
+            "url": "{{baseUrl}}/api/v1/student/courses/{{courseId}}/enroll"
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Lesson materials",
+      "item": [
+        {
+          "name": "Tutor create material",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Create material 200', function () { pm.response.to.have.status(200); });",
+                  "const body = pm.response.json();",
+                  "pm.expect(body.title).to.eql('Chuong 1 - Dao ham');",
+                  "pm.expect(body.fileUrl).to.include('.pdf');",
+                  "pm.expect(body.tutorId).to.be.ok;",
+                  "pm.environment.set('materialId', body.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{tutorToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Chuong 1 - Dao ham\",\n  \"fileUrl\": \"https://cdn.example.com/dao-ham.pdf\",\n  \"lectureLink\": \"https://meet.example.com/toan-12\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/tutor/courses/{{courseId}}/materials"
+          }
+        },
+        {
+          "name": "Tutor list materials",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Tutor list materials 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('Has at least 1 material', function () { pm.expect(pm.response.json().length).to.be.at.least(1); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{tutorToken}}" }],
+            "url": "{{baseUrl}}/api/v1/tutor/courses/{{courseId}}/materials"
+          }
+        },
+        {
+          "name": "Tutor update material",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Update material 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('Title updated', function () { pm.expect(pm.response.json().title).to.eql('Chuong 1 - Dao ham (updated)'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{tutorToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Chuong 1 - Dao ham (updated)\",\n  \"fileUrl\": \"https://cdn.example.com/dao-ham-v2.pdf\",\n  \"lectureLink\": \"https://meet.example.com/toan-12\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/tutor/materials/{{materialId}}"
+          }
+        },
+        {
+          "name": "Student list materials",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Student can view materials', function () { pm.response.to.have.status(200); });",
+                  "pm.test('Student sees PDF url', function () {",
+                  "  const items = pm.response.json();",
+                  "  pm.expect(items[0].fileUrl).to.be.ok;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{studentToken}}" }],
+            "url": "{{baseUrl}}/api/v1/student/courses/{{courseId}}/materials"
+          }
+        },
+        {
+          "name": "Student cannot create material (403)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Student blocked from tutor API', function () {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([403, 401]);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{studentToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Hack material\",\n  \"fileUrl\": \"https://evil.example.com/a.pdf\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/tutor/courses/{{courseId}}/materials"
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Assignments and submissions",
+      "item": [
+        {
+          "name": "Tutor create assignment",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Create assignment 200', function () { pm.response.to.have.status(200); });",
+                  "const body = pm.response.json();",
+                  "pm.expect(body.title).to.eql('Bai tap dao ham');",
+                  "pm.environment.set('assignmentId', body.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{tutorToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Bai tap dao ham\",\n  \"content\": \"Lam 5 cau trong file PDF\",\n  \"dueAt\": \"2030-12-31T23:59:59\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/tutor/courses/{{courseId}}/assignments"
+          }
+        },
+        {
+          "name": "Student list assignments",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Student list assignments 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('Has assignment', function () { pm.expect(pm.response.json().length).to.be.at.least(1); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{studentToken}}" }],
+            "url": "{{baseUrl}}/api/v1/student/courses/{{courseId}}/assignments"
+          }
+        },
+        {
+          "name": "Student submit assignment",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Submit 200', function () { pm.response.to.have.status(200); });",
+                  "const body = pm.response.json();",
+                  "pm.expect(body.fileUrl).to.be.ok;",
+                  "pm.expect(body.score).to.eql(null);",
+                  "pm.environment.set('submissionId', body.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{studentToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"submissionContent\": \"Em da lam xong 5 cau\",\n  \"fileUrl\": \"https://cdn.example.com/bai-lam-hoc-vien.pdf\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/student/assignments/{{assignmentId}}/submissions"
+          }
+        },
+        {
+          "name": "Student view my submission",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('My submission 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('Same submission id', function () {",
+                  "  pm.expect(pm.response.json().id).to.eql(pm.environment.get('submissionId'));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{studentToken}}" }],
+            "url": "{{baseUrl}}/api/v1/student/assignments/{{assignmentId}}/submissions/me"
+          }
+        },
+        {
+          "name": "Tutor list submissions",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Tutor list submissions 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('Sees student work', function () {",
+                  "  const items = pm.response.json();",
+                  "  pm.expect(items.length).to.be.at.least(1);",
+                  "  pm.expect(items[0].submissionContent).to.be.ok;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{tutorToken}}" }],
+            "url": "{{baseUrl}}/api/v1/tutor/assignments/{{assignmentId}}/submissions"
+          }
+        },
+        {
+          "name": "Tutor grade submission",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Grade 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('Score saved', function () { pm.expect(pm.response.json().score).to.eql(8.5); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{tutorToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"score\": 8.5\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/tutor/submissions/{{submissionId}}/score"
+          }
+        },
+        {
+          "name": "Student cannot resubmit after graded (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Resubmit blocked', function () { pm.response.to.have.status(400); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{studentToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"submissionContent\": \"Nop lai sau khi cham\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/student/assignments/{{assignmentId}}/submissions"
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Cleanup (optional)",
+      "item": [
+        {
+          "name": "Tutor delete material",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Delete material 204', function () { pm.response.to.have.status(204); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{tutorToken}}" }],
+            "url": "{{baseUrl}}/api/v1/tutor/materials/{{materialId}}"
+          }
+        }
+      ]
+    }
+  ]
+}

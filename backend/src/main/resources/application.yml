@@ -15,7 +15,6 @@ spring:
     # Username đã tách ra từ chuỗi của Supabase
     username: postgres.gzyokemqqekeohlnrxcu
 
-    # ĐIỀN MẬT KHẨU THẬT CỦA BẠN VÀO ĐÂY (Thay cho chữ [YOUR-PASSWORD]):
     password: Bangpham@@06012005
 
     driver-class-name: org.postgresql.Driver
@@ -28,9 +27,15 @@ spring:
       hibernate:
         format_sql: true
   
-  logging:
+logging:
   level:
-    org.springframework.security: DEBUG
-    
+    org.springframework.security: INFO
+
 server:
   port: 8080
+
+ai:
+  openai:
+    api-key: ${OPENAI_API_KEY:}
+    base-url: ${OPENAI_BASE_URL:https://api.openai.com/v1}
+    model: ${OPENAI_MODEL:gpt-4o-mini}

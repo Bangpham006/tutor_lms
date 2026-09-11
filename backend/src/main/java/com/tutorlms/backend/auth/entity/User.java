@@ -55,8 +55,16 @@ public class User implements UserDetails {
     
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        // Chuyển chuỗi role thành định dạng quyền mà Spring Security hiểu
-        return List.of(new SimpleGrantedAuthority(role));
+        return List.of(new SimpleGrantedAuthority(normalizedRole()));
+    }
+
+    public String normalizedRole() {
+        String value = role == null ? "ROLE_STUDENT" : role.trim().toUpperCase();
+        return value.startsWith("ROLE_") ? value : "ROLE_" + value;
+    }
+
+    public boolean hasRole(String expected) {
+        return normalizedRole().equals(expected);
     }
 
     @Override
