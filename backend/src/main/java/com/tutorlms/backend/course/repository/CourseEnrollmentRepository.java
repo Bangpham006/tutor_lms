@@ -14,4 +14,11 @@ public interface CourseEnrollmentRepository extends JpaRepository<CourseEnrollme
     Optional<CourseEnrollment> findByCourse_IdAndStudent_Id(UUID courseId, UUID studentId);
 
     List<CourseEnrollment> findByStudent_IdOrderByEnrolledAtDesc(UUID studentId);
+
+    List<CourseEnrollment> findByCourse_IdOrderByEnrolledAtDesc(UUID courseId);
+
+    /** Đếm số học viên đã đăng ký khóa học — dùng cho enrollmentCount trong CourseDetailResponse */
+    long countByCourse_Id(UUID courseId);
+
 }
+

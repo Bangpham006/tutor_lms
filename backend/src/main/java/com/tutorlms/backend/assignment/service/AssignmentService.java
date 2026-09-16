@@ -14,6 +14,8 @@ import com.tutorlms.backend.common.exception.BadRequestException;
 import com.tutorlms.backend.common.exception.ResourceNotFoundException;
 import com.tutorlms.backend.course.entity.Course;
 import com.tutorlms.backend.course.service.CourseService;
+import com.tutorlms.backend.notification.entity.Notification;
+import com.tutorlms.backend.notification.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,6 +31,8 @@ public class AssignmentService {
     private final AssignmentRepository assignmentRepository;
     private final AssignmentSubmissionRepository submissionRepository;
     private final CourseService courseService;
+    private final NotificationService notificationService;
+
 
     @Transactional
     public AssignmentResponse create(User tutor, UUID courseId, AssignmentRequest request) {
@@ -39,7 +43,19 @@ public class AssignmentService {
                 .dueAt(request.getDueAt())
                 .course(course)
                 .build();
-        return toAssignmentResponse(assignmentRepository.save(assignment));
+        Assignment saved = assignmentRepository.save(assignment);
+
+        // NHIEM VU 3: Phat thong bao den tat ca hoc vien da enroll (async)
+        notificationService.broadcastToEnrolledStudents(
+                course,
+                Notification.Type.NEW_ASSIGNMENT,
+                "Bai tap moi: " + saved.getTitle(),
+                "Gia su vua dang bai tap moi trong khoa hoc " + course.getTitle()
+                        + (saved.getDueAt() != null ? ". Han nop: " + saved.getDueAt() : ""),
+                saved.getId()
+        );
+
+        return toAssignmentResponse(saved);
     }
 
     @Transactional(readOnly = true)
@@ -128,9 +144,24 @@ public class AssignmentService {
     public AssignmentSubmissionResponse grade(User tutor, UUID submissionId, GradeSubmissionRequest request) {
         AssignmentSubmission submission = submissionRepository.findById(submissionId)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy bài nộp"));
-        courseService.requireOwnedCourse(tutor, submission.getAssignment().getCourse().getId());
+        Course course = submission.getAssignment().getCourse();
+        courseService.requireOwnedCourse(tutor, course.getId());
         submission.setScore(request.getScore());
-        return toSubmissionResponse(submissionRepository.save(submission));
+        AssignmentSubmission saved = submissionRepository.save(submission);
+
+        // Thong bao diem so cho hoc vien (chi gui cho 1 nguoi, dung broadcastToEnrolledStudents
+        // nhung truyen danh sach gom 1 student -- simplification)
+        notificationService.broadcastToOneStudent(
+                saved.getStudent(),
+                course,
+                Notification.Type.SCORE_PUBLISHED,
+                "Diem bai tap da duoc cong bo",
+                "Bai tap \"" + submission.getAssignment().getTitle() + "\" cua ban da duoc cham diem: "
+                        + request.getScore() + " diem",
+                submission.getAssignment().getId()
+        );
+
+        return toSubmissionResponse(saved);
     }
 
     private Assignment requireOwnedAssignment(User tutor, UUID assignmentId) {

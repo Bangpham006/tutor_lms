@@ -1,16 +1,22 @@
 package com.tutorlms.backend.course.service;
 
+import com.tutorlms.backend.assignment.dto.AssignmentResponse;
+import com.tutorlms.backend.assignment.entity.Assignment;
 import com.tutorlms.backend.auth.entity.User;
 import com.tutorlms.backend.common.exception.ForbiddenOperationException;
 import com.tutorlms.backend.common.exception.ResourceNotFoundException;
 import com.tutorlms.backend.common.security.CurrentUser;
 import com.tutorlms.backend.common.security.Roles;
+import com.tutorlms.backend.course.dto.CourseDetailResponse;
 import com.tutorlms.backend.course.dto.CourseRequest;
 import com.tutorlms.backend.course.dto.CourseResponse;
+import com.tutorlms.backend.course.dto.EnrollmentResponse;
 import com.tutorlms.backend.course.entity.Course;
 import com.tutorlms.backend.course.entity.CourseEnrollment;
 import com.tutorlms.backend.course.repository.CourseEnrollmentRepository;
 import com.tutorlms.backend.course.repository.CourseRepository;
+import com.tutorlms.backend.material.dto.LessonMaterialResponse;
+import com.tutorlms.backend.material.entity.LessonMaterial;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,6 +31,10 @@ public class CourseService {
     private final CourseRepository courseRepository;
     private final CourseEnrollmentRepository enrollmentRepository;
 
+    // =========================================================
+    // TUTOR: Quản lý khóa học
+    // =========================================================
+
     @Transactional
     public CourseResponse create(User tutor, CourseRequest request) {
         CurrentUser.require(tutor);
@@ -34,6 +44,13 @@ public class CourseService {
                 .tutor(tutor)
                 .build();
         return toResponse(courseRepository.save(course));
+    }
+
+    /** Lay Course entity theo ID — dung cho ChatService, NotificationService */
+    @Transactional(readOnly = true)
+    public Course getCourse(UUID courseId) {
+        return courseRepository.findById(courseId)
+                .orElseThrow(() -> new ResourceNotFoundException("Khong tim thay khoa hoc"));
     }
 
     @Transactional(readOnly = true)
@@ -61,11 +78,47 @@ public class CourseService {
         courseRepository.delete(course);
     }
 
+    // =========================================================
+    // MARKETPLACE: Công khai — không cần đăng nhập
+    // =========================================================
+
+    /**
+     * Tìm kiếm / lọc khóa học trên Marketplace.
+     * Cả hai tham số đều tùy chọn — nếu null thì trả về tất cả.
+     *
+     * @param keyword  từ khóa tìm kiếm trong title / description
+     * @param tutorId  lọc theo gia sư cụ thể
+     */
+    @Transactional(readOnly = true)
+    public List<CourseResponse> search(String keyword, UUID tutorId) {
+        return courseRepository.searchCourses(keyword, tutorId).stream()
+                .map(this::toResponse)
+                .toList();
+    }
+
+    /**
+     * Xem chi tiết khóa học trên Marketplace (công khai).
+     * Ẩn fileUrl của tài liệu — người dùng phải đăng ký mới xem được file.
+     */
+    @Transactional(readOnly = true)
+    public CourseDetailResponse getCourseDetail(UUID courseId) {
+        Course course = getCourse(courseId);
+        return toDetailResponsePublic(course);
+    }
+
+    // =========================================================
+    // STUDENT: Đăng ký & xem khóa học đã học
+    // =========================================================
+
+    /** Giữ tương thích với catalog endpoint cũ — trả tất cả khóa học. */
     @Transactional(readOnly = true)
     public List<CourseResponse> catalog() {
         return courseRepository.findAll().stream().map(this::toResponse).toList();
     }
 
+    /**
+     * Đăng ký một khóa học. Idempotent — đăng ký lại sẽ trả về kết quả như cũ.
+     */
     @Transactional
     public CourseResponse enroll(User student, UUID courseId) {
         CurrentUser.require(student);
@@ -80,14 +133,30 @@ public class CourseService {
         return toResponse(course);
     }
 
+    /**
+     * Danh sách khóa học đã đăng ký — kèm thông tin enrollment (enrolledAt).
+     */
     @Transactional(readOnly = true)
-    public List<CourseResponse> listEnrolled(User student) {
+    public List<EnrollmentResponse> getMyEnrollments(User student) {
         CurrentUser.require(student);
         return enrollmentRepository.findByStudent_IdOrderByEnrolledAtDesc(student.getId()).stream()
-                .map(CourseEnrollment::getCourse)
-                .map(this::toResponse)
+                .map(this::toEnrollmentResponse)
                 .toList();
     }
+
+    /**
+     * Xem chi tiết khóa học khi đã đăng ký — trả về đầy đủ fileUrl.
+     */
+    @Transactional(readOnly = true)
+    public CourseDetailResponse getCourseDetailForEnrolledStudent(User student, UUID courseId) {
+        requireEnrolledStudent(student, courseId);
+        Course course = getCourse(courseId);
+        return toDetailResponse(course, false); // false = không ẩn fileUrl
+    }
+
+    // =========================================================
+    // Phương thức kiểm tra quyền (helpers)
+    // =========================================================
 
     @Transactional(readOnly = true)
     public Course getCourse(UUID courseId) {
@@ -109,7 +178,7 @@ public class CourseService {
 
     public void requireEnrolledStudent(User student, UUID courseId) {
         CurrentUser.require(student);
-        getCourse(courseId);
+        getCourse(courseId); // kiểm tra khóa học tồn tại
         if (CurrentUser.isAdmin(student)) {
             return;
         }
@@ -121,6 +190,10 @@ public class CourseService {
         }
     }
 
+    // =========================================================
+    // Mapper helpers
+    // =========================================================
+
     public CourseResponse toResponse(Course course) {
         return CourseResponse.builder()
                 .id(course.getId())
@@ -131,4 +204,76 @@ public class CourseService {
                 .createdAt(course.getCreatedAt())
                 .build();
     }
+
+    private EnrollmentResponse toEnrollmentResponse(CourseEnrollment enrollment) {
+        Course course = enrollment.getCourse();
+        return EnrollmentResponse.builder()
+                .enrollmentId(enrollment.getId())
+                .courseId(course.getId())
+                .courseTitle(course.getTitle())
+                .courseDescription(course.getDescription())
+                .tutorId(course.getTutor().getId())
+                .tutorName(course.getTutor().getFullName())
+                .enrolledAt(enrollment.getEnrolledAt())
+                .courseCreatedAt(course.getCreatedAt())
+                .build();
+    }
+
+    /**
+     * Map Course thành CourseDetailResponse.
+     *
+     * @param hideFileUrl nếu true thì ẩn fileUrl (dùng cho Marketplace công khai)
+     */
+    private CourseDetailResponse toDetailResponse(Course course, boolean hideFileUrl) {
+        List<LessonMaterialResponse> materials = course.getMaterials().stream()
+                .map(m -> mapMaterial(m, hideFileUrl))
+                .toList();
+
+        List<AssignmentResponse> assignments = course.getAssignments().stream()
+                .map(this::mapAssignment)
+                .toList();
+
+        long count = enrollmentRepository.countByCourse_Id(course.getId());
+
+        return CourseDetailResponse.builder()
+                .id(course.getId())
+                .title(course.getTitle())
+                .description(course.getDescription())
+                .tutorId(course.getTutor().getId())
+                .tutorName(course.getTutor().getFullName())
+                .createdAt(course.getCreatedAt())
+                .enrollmentCount(count)
+                .materials(materials)
+                .assignments(assignments)
+                .build();
+    }
+
+    /** Marketplace công khai — ẩn fileUrl */
+    private CourseDetailResponse toDetailResponsePublic(Course course) {
+        return toDetailResponse(course, true);
+    }
+
+    private LessonMaterialResponse mapMaterial(LessonMaterial m, boolean hideFileUrl) {
+        return LessonMaterialResponse.builder()
+                .id(m.getId())
+                .courseId(m.getCourse().getId())
+                .tutorId(m.getTutor().getId())
+                .title(m.getTitle())
+                .fileUrl(hideFileUrl ? null : m.getFileUrl())
+                .lectureLink(m.getLectureLink())
+                .createdAt(m.getCreatedAt())
+                .build();
+    }
+
+    private AssignmentResponse mapAssignment(Assignment a) {
+        return AssignmentResponse.builder()
+                .id(a.getId())
+                .courseId(a.getCourse().getId())
+                .title(a.getTitle())
+                .content(a.getContent())
+                .dueAt(a.getDueAt())
+                .createdAt(a.getCreatedAt())
+                .build();
+    }
 }
+

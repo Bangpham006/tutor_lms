@@ -6,6 +6,7 @@ import com.tutorlms.backend.material.entity.LessonMaterial;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -30,12 +31,20 @@ public class Course {
     @Column(columnDefinition = "text")
     private String description;
 
+    /**
+     * Gia khoa hoc (VND). price = 0 nghia la mien phi, tu dong enroll khong can thanh toan.
+     */
+    @Column(nullable = false, precision = 12, scale = 0)
+    @Builder.Default
+    private BigDecimal price = BigDecimal.ZERO;
+
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "tutor_id", nullable = false)
     private User tutor;
 
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
+
 
     @OneToMany(mappedBy = "course", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default

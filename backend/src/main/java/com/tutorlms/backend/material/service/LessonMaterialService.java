@@ -8,6 +8,8 @@ import com.tutorlms.backend.material.dto.LessonMaterialRequest;
 import com.tutorlms.backend.material.dto.LessonMaterialResponse;
 import com.tutorlms.backend.material.entity.LessonMaterial;
 import com.tutorlms.backend.material.repository.LessonMaterialRepository;
+import com.tutorlms.backend.notification.entity.Notification;
+import com.tutorlms.backend.notification.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,6 +23,7 @@ public class LessonMaterialService {
 
     private final LessonMaterialRepository materialRepository;
     private final CourseService courseService;
+    private final NotificationService notificationService;
 
     @Transactional
     public LessonMaterialResponse create(User tutor, UUID courseId, LessonMaterialRequest request) {
@@ -32,8 +35,20 @@ public class LessonMaterialService {
                 .course(course)
                 .tutor(course.getTutor())
                 .build();
-        return toResponse(materialRepository.save(material));
+        LessonMaterial saved = materialRepository.save(material);
+
+        // Thong bao tai lieu moi den tat ca hoc vien da enroll (async)
+        notificationService.broadcastToEnrolledStudents(
+                course,
+                Notification.Type.NEW_MATERIAL,
+                "Tai lieu moi: " + saved.getTitle(),
+                "Gia su vua them tai lieu moi vao khoa hoc " + course.getTitle(),
+                saved.getId()
+        );
+
+        return toResponse(saved);
     }
+
 
     @Transactional(readOnly = true)
     public List<LessonMaterialResponse> listForTutor(User tutor, UUID courseId) {

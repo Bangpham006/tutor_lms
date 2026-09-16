@@ -24,26 +24,33 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-            // 1. Tắt CSRF cho REST API Stateless
+            // 1. Tat CSRF cho REST API Stateless
             .csrf(AbstractHttpConfigurer::disable)
-            
-            // 2. Phân quyền Endpoint
+
+            // 2. Phan quyen Endpoint
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/v1/auth/**").permitAll()
-                .requestMatchers("/api/v1/demo/**").permitAll() // Mở đường dẫn DemoController để test
+                .requestMatchers("/api/v1/demo/**").permitAll()
+                .requestMatchers("/api/v1/marketplace/**").permitAll()
+                // VNPay IPN: Phai public vi VNPay server goi truc tiep (khong co JWT)
+                // Bao mat bang HMAC-SHA512 signature verification trong PaymentService
+                .requestMatchers("/api/v1/payment/vnpay-ipn").permitAll()
+                .requestMatchers("/api/v1/payment/vnpay-return").permitAll()
+                // WebSocket SockJS endpoint
+                .requestMatchers("/ws/**").permitAll()
                 .requestMatchers("/api/v1/admin/**").hasAuthority("ROLE_ADMIN")
                 .requestMatchers("/api/v1/tutor/**").hasAnyAuthority("ROLE_TUTOR", "ROLE_ADMIN")
                 .requestMatchers("/api/v1/student/**").hasAnyAuthority("ROLE_STUDENT", "ROLE_PARENT", "ROLE_ADMIN")
                 .anyRequest().authenticated()
             )
-            
-            // 3. Sử dụng Session Stateless
+
+            // 3. Session Stateless
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            
-            // 4. Khai báo AuthenticationProvider & Thêm JWT Filter
+
+            // 4. AuthenticationProvider & JWT Filter
             .authenticationProvider(authenticationProvider)
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
-}
+}
