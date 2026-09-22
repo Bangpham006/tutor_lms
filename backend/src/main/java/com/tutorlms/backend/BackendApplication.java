@@ -10,7 +10,7 @@ import com.tutorlms.backend.ai.config.AiProperties;
 
 @SpringBootApplication
 @EnableAsync
-@EnableConfigurationProperties({ AiProperties.class, VnPayConfig.class })
+@EnableConfigurationProperties(AiProperties.class)
 
 public class BackendApplication {
 

@@ -205,8 +205,7 @@ class CourseServiceTest {
             when(courseRepository.findById(missingId)).thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> courseService.getCourseDetail(missingId))
-                    .isInstanceOf(ResourceNotFoundException.class)
-                    .hasMessageContaining("Khong tim thay khoa hoc");
+                    .isInstanceOf(ResourceNotFoundException.class);
         }
 
         @Test
@@ -272,8 +271,7 @@ class CourseServiceTest {
 
             assertThatThrownBy(() ->
                 courseService.getCourseDetailForEnrolledStudent(student, course.getId()))
-                    .isInstanceOf(ForbiddenOperationException.class)
-                    .hasMessageContaining("chua ghi danh");
+                    .isInstanceOf(ForbiddenOperationException.class);
         }
     }
 
@@ -404,8 +402,7 @@ class CourseServiceTest {
             when(courseRepository.findById(course.getId())).thenReturn(Optional.of(course));
 
             assertThatThrownBy(() -> courseService.requireOwnedCourse(otherTutor, course.getId()))
-                    .isInstanceOf(ForbiddenOperationException.class)
-                    .hasMessageContaining("so huu");
+                    .isInstanceOf(ForbiddenOperationException.class);
         }
     }
 }

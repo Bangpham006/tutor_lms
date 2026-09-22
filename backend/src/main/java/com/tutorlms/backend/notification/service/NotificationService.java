@@ -45,19 +45,25 @@ public class NotificationService {
         List<User> students = enrollmentRepo.findByCourse_IdOrderByEnrolledAtDesc(course.getId())
                 .stream().map(CourseEnrollment::getStudent).toList();
 
+        NotificationResponse broadcastResp = null;
         for (User student : students) {
             Notification notification = notificationRepo.save(Notification.builder()
                     .recipient(student).course(course).type(type)
                     .title(title).body(body).referenceId(referenceId).build());
 
             NotificationResponse resp = toResponse(notification);
-
-            // Broadcast toan phong
-            messagingTemplate.convertAndSend(
-                    "/topic/course/" + course.getId() + "/notify", resp);
+            if (broadcastResp == null) {
+                broadcastResp = resp;
+            }
             // Ca nhan rieng tu
             messagingTemplate.convertAndSendToUser(
                     student.getId().toString(), "/queue/notifications", resp);
+        }
+
+        // Broadcast toan phong khoa hoc mot lan
+        if (broadcastResp != null) {
+            messagingTemplate.convertAndSend(
+                    "/topic/course/" + course.getId() + "/notify", broadcastResp);
         }
         log.info("Broadcast {} to {} students in course={}",
                 type, students.size(), course.getId());

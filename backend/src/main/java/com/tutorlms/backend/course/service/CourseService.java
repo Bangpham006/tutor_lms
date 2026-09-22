@@ -46,12 +46,6 @@ public class CourseService {
         return toResponse(courseRepository.save(course));
     }
 
-    /** Lay Course entity theo ID — dung cho ChatService, NotificationService */
-    @Transactional(readOnly = true)
-    public Course getCourse(UUID courseId) {
-        return courseRepository.findById(courseId)
-                .orElseThrow(() -> new ResourceNotFoundException("Khong tim thay khoa hoc"));
-    }
 
     @Transactional(readOnly = true)
     public List<CourseResponse> listOwnedByTutor(User tutor) {

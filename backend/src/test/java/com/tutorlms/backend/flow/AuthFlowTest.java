@@ -124,9 +124,9 @@ class AuthFlowTest {
     }
 
     @Test
-    @DisplayName("Goi /auth/me khong co token → 403")
-    void getMe_withoutToken_returns403() throws Exception {
+    @DisplayName("Goi /auth/me khong co token → 401")
+    void getMe_withoutToken_returns401() throws Exception {
         mockMvc.perform(get("/api/v1/auth/me"))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isUnauthorized());
     }
 }

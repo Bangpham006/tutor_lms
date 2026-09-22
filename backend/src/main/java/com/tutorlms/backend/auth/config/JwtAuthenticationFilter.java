@@ -30,8 +30,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     @Override
     protected boolean shouldNotFilter(@NonNull HttpServletRequest request) throws ServletException {
-        // Bỏ qua hoàn toàn bộ lọc JWT đối với các endpoint xác thực công khai
-        return request.getRequestURI().startsWith("/api/v1/auth/");
+        // Chỉ bỏ qua đăng ký và đăng nhập công khai, các endpoint khác như /me vẫn cần giải mã JWT
+        String path = request.getRequestURI();
+        return path.equals("/api/v1/auth/register") || path.equals("/api/v1/auth/login");
     }
 
     @Override

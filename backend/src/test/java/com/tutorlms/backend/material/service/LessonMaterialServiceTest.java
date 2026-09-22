@@ -36,6 +36,9 @@ class LessonMaterialServiceTest {
     @Mock
     private CourseService courseService;
 
+    @Mock
+    private com.tutorlms.backend.notification.service.NotificationService notificationService;
+
     @InjectMocks
     private LessonMaterialService materialService;
 

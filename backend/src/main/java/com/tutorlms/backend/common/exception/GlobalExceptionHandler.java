@@ -42,6 +42,11 @@ public class GlobalExceptionHandler {
         return error(HttpStatus.BAD_REQUEST, message);
     }
 
+    @ExceptionHandler(RuntimeException.class)
+    public ResponseEntity<ApiErrorResponse> handleRuntimeException(RuntimeException ex) {
+        return error(HttpStatus.INTERNAL_SERVER_ERROR, ex.getMessage());
+    }
+
     private ResponseEntity<ApiErrorResponse> error(HttpStatus status, String message) {
         return ResponseEntity.status(status).body(ApiErrorResponse.builder()
                 .timestamp(Instant.now())
