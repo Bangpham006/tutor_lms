@@ -1,19 +1,8 @@
-# Multi-stage build for Spring Boot Backend from root repository
-FROM eclipse-temurin:21-jdk-alpine AS builder
-WORKDIR /build
-
-# Copy backend files into build container
-COPY backend/ .
-
-# Build application jar skipping tests
-RUN chmod +x mvnw && ./mvnw clean package -DskipTests
-
-# Stage 2: Minimal runtime image
 FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
 
-# Copy built jar from builder
-COPY --from=builder /build/target/backend-0.0.1-SNAPSHOT.jar app.jar
+# Copy prebuilt jar directly (instant deploy, 0 RAM overhead during build)
+COPY backend/app.jar app.jar
 
 # Create uploads directory for student/tutor file storage
 RUN mkdir -p uploads
