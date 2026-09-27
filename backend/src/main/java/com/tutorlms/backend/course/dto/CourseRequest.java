@@ -10,4 +10,8 @@ public class CourseRequest {
     private String title;
 
     private String description;
+
+    private java.math.BigDecimal price;
+
+    private String enrollmentKey;
 }

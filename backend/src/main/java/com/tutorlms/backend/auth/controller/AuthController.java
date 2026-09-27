@@ -29,14 +29,37 @@ public class AuthController {
     public ResponseEntity<AuthResponse> login(@RequestBody LoginRequest request) {
         return ResponseEntity.ok(authService.login(request));
     }
-    // test api get current user
-   @GetMapping("/me")
-public ResponseEntity<?> getCurrentUser(@AuthenticationPrincipal UserDetails userDetails) {
-    if (userDetails == null) {
-        return ResponseEntity.status(401).body("Không tìm thấy thông tin xác thực");
+    // Lấy thông tin cá nhân của người dùng đang đăng nhập
+    @GetMapping("/profile")
+    public ResponseEntity<com.tutorlms.backend.auth.dto.UserProfileResponse> getProfile(
+            @AuthenticationPrincipal com.tutorlms.backend.auth.entity.User currentUser
+    ) {
+        return ResponseEntity.ok(authService.getProfile(currentUser));
     }
-    // userDetails.getUsername() đang trả về ID (UUID) của user theo hàm getUsername() bạn đã định nghĩa trong class User
-    return ResponseEntity.ok("Authenticated user ID: " + userDetails.getUsername());
-}
 
+    // Cập nhật thông tin cá nhân
+    @PutMapping("/profile")
+    public ResponseEntity<com.tutorlms.backend.auth.dto.UserProfileResponse> updateProfile(
+            @AuthenticationPrincipal com.tutorlms.backend.auth.entity.User currentUser,
+            @RequestBody com.tutorlms.backend.auth.dto.UpdateProfileRequest request
+    ) {
+        return ResponseEntity.ok(authService.updateProfile(currentUser, request));
+    }
+
+    // Xem thông tin hồ sơ của một người dùng bất kỳ (ví dụ xem profile gia sư)
+    @GetMapping("/users/{userId}")
+    public ResponseEntity<com.tutorlms.backend.auth.dto.UserProfileResponse> getUserProfile(
+            @PathVariable java.util.UUID userId
+    ) {
+        return ResponseEntity.ok(authService.getUserProfileById(userId));
+    }
+
+    // test api get current user
+    @GetMapping("/me")
+    public ResponseEntity<?> getCurrentUser(@AuthenticationPrincipal UserDetails userDetails) {
+        if (userDetails == null) {
+            return ResponseEntity.status(401).body("Không tìm thấy thông tin xác thực");
+        }
+        return ResponseEntity.ok("Authenticated user ID: " + userDetails.getUsername());
+    }
 }

@@ -3,6 +3,7 @@ package com.tutorlms.backend.ai.controller;
 import com.tutorlms.backend.ai.dto.GenerateMcqRequest;
 import com.tutorlms.backend.ai.dto.McqSetResponse;
 import com.tutorlms.backend.ai.dto.PdfSummaryResponse;
+import com.tutorlms.backend.ai.dto.SummarizeRequest;
 import com.tutorlms.backend.ai.service.AiService;
 import com.tutorlms.backend.auth.entity.User;
 import lombok.RequiredArgsConstructor;
@@ -24,9 +25,10 @@ public class TutorAiController {
     @PostMapping("/{materialId}/ai/summarize")
     public ResponseEntity<PdfSummaryResponse> summarize(
             @AuthenticationPrincipal User currentUser,
-            @PathVariable UUID materialId
+            @PathVariable UUID materialId,
+            @RequestBody(required = false) SummarizeRequest request
     ) {
-        return ResponseEntity.ok(aiService.summarizeMaterial(currentUser, materialId));
+        return ResponseEntity.ok(aiService.summarizeMaterial(currentUser, materialId, request));
     }
 
     @PostMapping("/{materialId}/ai/generate-mcq")

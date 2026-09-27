@@ -18,7 +18,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/v1/student")
 @RequiredArgsConstructor
-@PreAuthorize("hasAnyAuthority('ROLE_STUDENT', 'ROLE_PARENT', 'ROLE_ADMIN')")
+@PreAuthorize("hasAnyAuthority('ROLE_STUDENT', 'ROLE_PARENT', 'ROLE_TUTOR', 'ROLE_ADMIN')")
 public class StudentAssignmentController {
 
     private final AssignmentService assignmentService;

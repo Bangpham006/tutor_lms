@@ -41,6 +41,9 @@ public class CourseService {
         Course course = Course.builder()
                 .title(request.getTitle())
                 .description(request.getDescription())
+                .price(request.getPrice() != null ? request.getPrice() : java.math.BigDecimal.ZERO)
+                .enrollmentKey(request.getEnrollmentKey() != null && !request.getEnrollmentKey().isBlank()
+                        ? request.getEnrollmentKey().trim() : null)
                 .tutor(tutor)
                 .build();
         return toResponse(courseRepository.save(course));
@@ -63,6 +66,12 @@ public class CourseService {
         Course course = requireOwnedCourse(tutor, courseId);
         course.setTitle(request.getTitle());
         course.setDescription(request.getDescription());
+        if (request.getPrice() != null) {
+            course.setPrice(request.getPrice());
+        }
+        if (request.getEnrollmentKey() != null) {
+            course.setEnrollmentKey(request.getEnrollmentKey().isBlank() ? null : request.getEnrollmentKey().trim());
+        }
         return toResponse(courseRepository.save(course));
     }
 
@@ -110,16 +119,30 @@ public class CourseService {
         return courseRepository.findAll().stream().map(this::toResponse).toList();
     }
 
-    /**
-     * Đăng ký một khóa học. Idempotent — đăng ký lại sẽ trả về kết quả như cũ.
-     */
     @Transactional
     public CourseResponse enroll(User student, UUID courseId) {
+        return enroll(student, courseId, null);
+    }
+
+    /**
+     * Đăng ký một khóa học. Idempotent — đăng ký lại sẽ trả về kết quả như cũ.
+     * Kiểm tra mật khẩu khóa học (Enrollment Key) nếu có.
+     */
+    @Transactional
+    public CourseResponse enroll(User student, UUID courseId, String enrollmentKey) {
         CurrentUser.require(student);
         Course course = getCourse(courseId);
         if (enrollmentRepository.existsByCourse_IdAndStudent_Id(courseId, student.getId())) {
             return toResponse(course);
         }
+
+        // Kiểm tra mật khẩu vào khóa học nếu khóa học có đặt mật khẩu
+        if (course.getEnrollmentKey() != null && !course.getEnrollmentKey().isBlank()) {
+            if (enrollmentKey == null || !course.getEnrollmentKey().trim().equalsIgnoreCase(enrollmentKey.trim())) {
+                throw new com.tutorlms.backend.common.exception.BadRequestException("Mật khẩu vào khóa học không chính xác hoặc chưa được cung cấp.");
+            }
+        }
+
         enrollmentRepository.save(CourseEnrollment.builder()
                 .course(course)
                 .student(student)
@@ -143,8 +166,12 @@ public class CourseService {
      */
     @Transactional(readOnly = true)
     public CourseDetailResponse getCourseDetailForEnrolledStudent(User student, UUID courseId) {
-        requireEnrolledStudent(student, courseId);
         Course course = getCourse(courseId);
+        boolean isOwner = course.getTutor() != null && course.getTutor().getId().equals(student.getId());
+        boolean isAdmin = student.hasRole("ROLE_ADMIN");
+        if (!isOwner && !isAdmin) {
+            requireEnrolledStudent(student, courseId);
+        }
         return toDetailResponse(course, false); // false = không ẩn fileUrl
     }
 
@@ -176,9 +203,6 @@ public class CourseService {
         if (CurrentUser.isAdmin(student)) {
             return;
         }
-        if (!student.hasRole(Roles.STUDENT) && !student.hasRole(Roles.PARENT)) {
-            throw new ForbiddenOperationException("Chỉ học viên mới truy cập tài nguyên học tập này");
-        }
         if (!enrollmentRepository.existsByCourse_IdAndStudent_Id(courseId, student.getId())) {
             throw new ForbiddenOperationException("Bạn chưa ghi danh khóa học này");
         }
@@ -193,9 +217,12 @@ public class CourseService {
                 .id(course.getId())
                 .title(course.getTitle())
                 .description(course.getDescription())
+                .price(course.getPrice())
+                .courseCode(course.getCourseCode())
                 .tutorId(course.getTutor().getId())
                 .tutorName(course.getTutor().getFullName())
                 .createdAt(course.getCreatedAt())
+                .hasEnrollmentKey(course.getEnrollmentKey() != null && !course.getEnrollmentKey().isBlank())
                 .build();
     }
 
@@ -206,6 +233,9 @@ public class CourseService {
                 .courseId(course.getId())
                 .courseTitle(course.getTitle())
                 .courseDescription(course.getDescription())
+                .courseCode(course.getCourseCode())
+                .price(course.getPrice())
+                .hasEnrollmentKey(course.getEnrollmentKey() != null && !course.getEnrollmentKey().isBlank())
                 .tutorId(course.getTutor().getId())
                 .tutorName(course.getTutor().getFullName())
                 .enrolledAt(enrollment.getEnrolledAt())
@@ -233,10 +263,13 @@ public class CourseService {
                 .id(course.getId())
                 .title(course.getTitle())
                 .description(course.getDescription())
+                .price(course.getPrice())
+                .courseCode(course.getCourseCode())
                 .tutorId(course.getTutor().getId())
                 .tutorName(course.getTutor().getFullName())
                 .createdAt(course.getCreatedAt())
                 .enrollmentCount(count)
+                .hasEnrollmentKey(course.getEnrollmentKey() != null && !course.getEnrollmentKey().isBlank())
                 .materials(materials)
                 .assignments(assignments)
                 .build();

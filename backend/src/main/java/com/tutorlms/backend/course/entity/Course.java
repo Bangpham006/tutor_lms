@@ -46,6 +46,16 @@ public class Course {
     private LocalDateTime createdAt;
 
 
+    @Column(name = "course_code", nullable = false, unique = true, length = 20)
+    private String courseCode;
+
+    /**
+     * Mật khẩu ghi danh / Mã vào lớp (Enrollment Key).
+     * Nếu null hoặc rỗng nghĩa là khóa học mở (không cần mật khẩu).
+     */
+    @Column(name = "enrollment_key", length = 100)
+    private String enrollmentKey;
+
     @OneToMany(mappedBy = "course", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<LessonMaterial> materials = new ArrayList<>();
@@ -61,5 +71,8 @@ public class Course {
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();
+        if (this.courseCode == null) {
+            this.courseCode = "CRS-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+        }
     }
 }

@@ -21,10 +21,13 @@ public class CourseDetailResponse {
     private UUID id;
     private String title;
     private String description;
+    private java.math.BigDecimal price;
+    private String courseCode;
     private UUID tutorId;
     private String tutorName;
     private LocalDateTime createdAt;
     private long enrollmentCount;
+    private boolean hasEnrollmentKey;
     private List<LessonMaterialResponse> materials;
     private List<AssignmentResponse> assignments;
 }

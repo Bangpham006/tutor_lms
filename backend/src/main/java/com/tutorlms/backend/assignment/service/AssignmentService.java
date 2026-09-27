@@ -68,7 +68,12 @@ public class AssignmentService {
 
     @Transactional(readOnly = true)
     public List<AssignmentResponse> listForStudent(User student, UUID courseId) {
-        courseService.requireEnrolledStudent(student, courseId);
+        Course course = courseService.getCourse(courseId);
+        boolean isOwner = course.getTutor() != null && course.getTutor().getId().equals(student.getId());
+        boolean isAdmin = student.hasRole("ROLE_ADMIN");
+        if (!isOwner && !isAdmin) {
+            courseService.requireEnrolledStudent(student, courseId);
+        }
         return assignmentRepository.findByCourse_IdOrderByDueAtAsc(courseId).stream()
                 .map(this::toAssignmentResponse)
                 .toList();
@@ -175,7 +180,7 @@ public class AssignmentService {
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy bài tập"));
     }
 
-    private AssignmentResponse toAssignmentResponse(Assignment assignment) {
+    public AssignmentResponse toAssignmentResponse(Assignment assignment) {
         return AssignmentResponse.builder()
                 .id(assignment.getId())
                 .courseId(assignment.getCourse().getId())

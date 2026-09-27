@@ -1,0 +1,29 @@
+# Logs
+*.log
+backend/*.log
+hs_err_pid*.log
+replay_pid*.log
+
+# Maven & Build
+backend/target/
+frontend/dist/
+frontend/node_modules/
+
+# IDE & OS
+.idea/
+.vscode/
+*.iml
+.DS_Store
+Thumbs.db
+
+# Uploads & Scratch
+backend/uploads/*
+!backend/uploads/.gitkeep
+uploads/*
+!uploads/.gitkeep
+*.py
+*.sql
+*.ps1
+ban_nhap_trang_cho_ghep_lop_1/
+chot_homepage/
+prototype_hoan_chinh/

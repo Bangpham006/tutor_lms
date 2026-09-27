@@ -19,6 +19,9 @@ public class EnrollmentResponse {
     private String courseDescription;
     private UUID tutorId;
     private String tutorName;
+    private String courseCode;
+    private java.math.BigDecimal price;
+    private boolean hasEnrollmentKey;
     private LocalDateTime enrolledAt;
     private LocalDateTime courseCreatedAt;
 }

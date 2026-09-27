@@ -19,8 +19,8 @@ public interface CourseRepository extends JpaRepository<Course, UUID> {
     @Query("""
             SELECT c FROM Course c
             WHERE (:keyword IS NULL
-                   OR LOWER(c.title) LIKE LOWER(CONCAT('%', :keyword, '%'))
-                   OR LOWER(c.description) LIKE LOWER(CONCAT('%', :keyword, '%')))
+                   OR LOWER(c.title) LIKE LOWER(CONCAT('%', CAST(:keyword AS string), '%'))
+                   OR LOWER(c.description) LIKE LOWER(CONCAT('%', CAST(:keyword AS string), '%')))
               AND (:tutorId IS NULL OR c.tutor.id = :tutorId)
             ORDER BY c.createdAt DESC
             """)

@@ -21,7 +21,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/v1/student/courses")
 @RequiredArgsConstructor
-@PreAuthorize("hasAnyAuthority('ROLE_STUDENT', 'ROLE_PARENT', 'ROLE_ADMIN')")
+@PreAuthorize("hasAnyAuthority('ROLE_STUDENT', 'ROLE_PARENT', 'ROLE_TUTOR', 'ROLE_ADMIN')")
 public class StudentCourseController {
 
     private final CourseService courseService;
@@ -37,16 +37,20 @@ public class StudentCourseController {
 
     /**
      * Đăng ký tham gia một khóa học. Idempotent — đăng ký lại trả về kết quả cũ.
+     * Hỗ trợ mật khẩu ghi danh (Enrollment Key) nếu khóa học yêu cầu.
      *
      * @param currentUser Học viên đang đăng nhập
      * @param courseId    ID khóa học muốn đăng ký
+     * @param request     Chứa mật khẩu enrollmentKey nếu có
      */
     @PostMapping("/{courseId}/enroll")
     public ResponseEntity<CourseResponse> enroll(
             @AuthenticationPrincipal User currentUser,
-            @PathVariable UUID courseId
+            @PathVariable UUID courseId,
+            @RequestBody(required = false) com.tutorlms.backend.course.dto.EnrollRequest request
     ) {
-        return ResponseEntity.ok(courseService.enroll(currentUser, courseId));
+        String key = request != null ? request.getEnrollmentKey() : null;
+        return ResponseEntity.ok(courseService.enroll(currentUser, courseId, key));
     }
 
     /**

@@ -60,7 +60,12 @@ public class LessonMaterialService {
 
     @Transactional(readOnly = true)
     public List<LessonMaterialResponse> listForStudent(User student, UUID courseId) {
-        courseService.requireEnrolledStudent(student, courseId);
+        Course course = courseService.getCourse(courseId);
+        boolean isOwner = course.getTutor() != null && course.getTutor().getId().equals(student.getId());
+        boolean isAdmin = student.hasRole("ROLE_ADMIN");
+        if (!isOwner && !isAdmin) {
+            courseService.requireEnrolledStudent(student, courseId);
+        }
         return materialRepository.findByCourse_IdOrderByCreatedAtDesc(courseId).stream()
                 .map(this::toResponse)
                 .toList();

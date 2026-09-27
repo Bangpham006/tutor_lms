@@ -12,7 +12,10 @@ public class CourseResponse {
     private UUID id;
     private String title;
     private String description;
+    private java.math.BigDecimal price;
+    private String courseCode;
     private UUID tutorId;
     private String tutorName;
     private LocalDateTime createdAt;
+    private boolean hasEnrollmentKey;
 }

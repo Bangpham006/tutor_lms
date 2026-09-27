@@ -36,9 +36,9 @@ server:
 
 ai:
   openai:
-    api-key: ${OPENAI_API_KEY:}
-    base-url: ${OPENAI_BASE_URL:https://api.openai.com/v1}
-    model: ${OPENAI_MODEL:gpt-4o-mini}
+    api-key: ${OPENAI_API_KEY:AQ.Ab8RN6K3tUvDk_sDXwkfYu1Bo9ZAMnqAbeP0J3QgfyVNV49w6A}
+    base-url: ${OPENAI_BASE_URL:https://generativelanguage.googleapis.com/v1beta/openai/}
+    model: ${OPENAI_MODEL:gemini-flash-lite-latest}
 
 # =============================================
 # VNPAY PAYMENT GATEWAY CONFIGURATION
