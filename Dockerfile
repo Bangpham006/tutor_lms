@@ -1,8 +1,8 @@
 FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
 
-# Copy prebuilt jar directly (instant deploy, 0 RAM overhead during build)
-COPY backend/app.jar app.jar
+# Copy prebuilt jar directly
+COPY app.jar app.jar
 
 # Create uploads directory for student/tutor file storage
 RUN mkdir -p uploads
